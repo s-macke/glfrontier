@@ -42,8 +42,8 @@ int mouse_shown = 0;
 /*
   Set window size
 */
-int screen_w = 320;
-int screen_h = 200;
+int screen_w = 640;
+int screen_h = 400;
 
 static void change_vidmode ()
 {
@@ -287,7 +287,8 @@ void Screen_ToggleRenderer ()
 static void draw_control_panel ()
 {
 	int x, y;
-	unsigned short *pixels;
+	unsigned int *pixels;
+	unsigned int col;
 	unsigned char *scr = VideoRaster;
 	
 	/* this is a big fucking hack to make starsystem names
@@ -312,12 +313,28 @@ static void draw_control_panel ()
 	pixels = (unsigned int *) sdlscrn->pixels;
 
 	for (y = 0; y < 168; y++)
+	{
 		for (x = 0; x < 320; x++)
-			*pixels++ = MainRGBPalette[*scr++];
-	for (y = 168; y < 200; y++)
+		{
+			col = MainRGBPalette[*scr++];
+			col |= (col << 16);
+			*pixels = col;
+			*(pixels+320) = col;
+			pixels++;
+		}
+		pixels += 320;
+	}
+	for (y = 168; y < 200; y++){
 		for (x = 0; x < 320; x++)
-			*pixels++ = CtrlRGBPalette[*scr++];
-
+		{
+			col = CtrlRGBPalette[*scr++];
+			col |= col << 16;
+			*pixels = col;
+			*(pixels+320) = col;
+			pixels++;
+		}
+		pixels += 320;
+	}
 	if (SDL_MUSTLOCK(sdlscrn))
 		SDL_UnlockSurface(sdlscrn);
 }

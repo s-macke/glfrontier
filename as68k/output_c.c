@@ -127,6 +127,8 @@ static void cln (const char *format, ...)
 	fputc ('\n', c_out);
 }
 /* C code generation shit */
+const char *c_uregsizes[] = { "u8[3]", "u16[1]", "u32" };
+const char *c_sregsizes[] = { "s8[3]", "s16[1]", "s32" };
 const char *c_usizes[] = { "u8", "u16", "u32" };
 const char *c_ssizes[] = { "s8", "s16", "s32" };
 const char *mem_read_funcs[] = { "rdbyte", "rdword", "rdlong" };
@@ -362,7 +364,7 @@ static void c_ea_get_address (ea_t *ea, char *buf)
 				sprintf (buf, "(__D%s + Regs[%d]._%s)",
 						ea->imm.label,
 						ea->ext._.reg + (ea->ext._.d_or_a ? 8 : 0),
-						(ea->ext._.size ? "s32" : "s16"));
+						(ea->ext._.size ? "s32" : "s16[1]"));
 			}
 			break;
 		default:
@@ -376,7 +378,7 @@ static void c_readea (ea_t *ea, char *buf)
 		/* dreg, areg */
 		case 0:
 		case 1:
-			sprintf (buf, "Regs[%d]._%s", ea->reg, c_ssizes[ea->op_size]);
+			sprintf (buf, "Regs[%d]._%s", ea->reg, c_sregsizes[ea->op_size]);
 			break;
 		/* areg indirect */
 		case 2:
@@ -438,7 +440,7 @@ static void c_readea (ea_t *ea, char *buf)
 						mem_read_funcs[ea->op_size],
 						ea->imm.label,
 						ea->ext._.reg + (ea->ext._.d_or_a ? 8 : 0),
-						(ea->ext._.size ? "s32" : "s16"));
+						(ea->ext._.size ? "s32" : "s16[1]"));
 			}
 			break;
 		default:
@@ -451,7 +453,7 @@ static void c_writeea (ea_t *ea, int size, const char *val)
 	switch (ea->mode) {
 		/* dreg, areg */
 		case 0: case 1:
-			cln ("Regs[%d]._%s = %s;", ea->reg, (size==BYTE ? "s8" : (size==WORD ? "s16" : "s32")), val);
+			cln ("Regs[%d]._%s = %s;", ea->reg, (size==BYTE ? "s8[3]" : (size==WORD ? "s16[1]" : "s32")), val);
 			break;
 		/* areg indirect */
 		case 2:
@@ -475,7 +477,7 @@ static void c_writeea (ea_t *ea, int size, const char *val)
 			break;
 		/* areg offset + reg */
 		case 6:
-			cln ("%s(Regs[%d]._s32+(Regs[%d]._%s)%+d, %s);", mem_write_funcs[size], ea->reg, ea->ext._.reg + (ea->ext._.d_or_a ? 8 : 0), (ea->ext._.size ? "s32" : "s16"), ea->ext._.displacement, val);
+			cln ("%s(Regs[%d]._s32+(Regs[%d]._%s)%+d, %s);", mem_write_funcs[size], ea->reg, ea->ext._.reg + (ea->ext._.d_or_a ? 8 : 0), (ea->ext._.size ? "s32" : "s16[1]"), ea->ext._.displacement, val);
 			break;
 		/* yes */
 		case 7:
@@ -509,7 +511,7 @@ static void c_writeea (ea_t *ea, int size, const char *val)
 			/* PC + INDEX + OFFSET */
 			else if (ea->reg == 3) {
 				if (!ea->imm.has_label) error ("Absolute value not allowed.");
-				cln ("%s(__D%s + Regs[%d]._%s, %s);", mem_write_funcs[size], ea->imm.label, ea->ext._.reg + (ea->ext._.d_or_a ? 8 : 0), (ea->ext._.size ? "s32" : "s16"), val);
+				cln ("%s(__D%s + Regs[%d]._%s, %s);", mem_write_funcs[size], ea->imm.label, ea->ext._.reg + (ea->ext._.d_or_a ? 8 : 0), (ea->ext._.size ? "s32" : "s16[1]"), val);
 			}
 			else {
 				error ("wtf in c_writeea ()");
@@ -1407,7 +1409,7 @@ void c_func_movem (ea_t *ea, int sz, int dr, int reg_mask)
 			offset = 0;
 			for (i=0; i<16; i++) {
 				if (reg_mask & (1<<i)) {
-					cln ("%s (dest, Regs[%d]._%s);", write_func, 15-i, c_usizes[sz]);
+					cln ("%s (dest, Regs[%d]._%s);", write_func, 15-i, c_uregsizes[sz]);
 					cln ("dest -= %d;", 1<<sz);
 					offset += 1<<sz;
 				}
@@ -1416,7 +1418,7 @@ void c_func_movem (ea_t *ea, int sz, int dr, int reg_mask)
 		} else {
 			for (i=0; i<16; i++) {
 				if (reg_mask & (1<<i)) {
-					cln ("%s (dest, Regs[%d]._%s);", write_func, i, c_usizes[sz]);
+					cln ("%s (dest, Regs[%d]._%s);", write_func, i, c_uregsizes[sz]);
 					cln ("dest += %d;", 1<<sz);
 				}
 			}
@@ -1688,11 +1690,11 @@ void c_func_dbcc (const char *label, int cond, int reg)
 {
 	if (gen_mode != GEN_CALL) return;
 	if (cond == 0) {
-		cln ("if (--Regs[%d]._s16 != -1) goto __N%s;\n", reg, label);
+		cln ("if (--Regs[%d]._s16[1] != -1) goto __N%s;\n", reg, label);
 	} else {
 		cout ("\tif ((!");
 		c_eval_cond (cond);
-		cout (") && (--Regs[%d]._s16 != -1)) goto __N%s;\n", reg, label);
+		cout (") && (--Regs[%d]._s16[1] != -1)) goto __N%s;\n", reg, label);
 	}
 }
 
@@ -1726,8 +1728,8 @@ void c_func_ext (int reg, int size)
 	c_fncall ();
 
 	c_fnbegin ();
-	cln ("%s val = Regs[%d]._%s;", c_ssizes[size], reg, c_ssizes[size-1]);
-	cln ("Regs[%d]._%s = val;", reg, c_ssizes[size]);
+	cln ("%s val = Regs[%d]._%s;", c_ssizes[size], reg, c_sregsizes[size-1]);
+	cln ("Regs[%d]._%s = val;", reg, c_sregsizes[size]);
 	ifZ cln ("nZ = val;");
 	ifN cln ("N = (val < 0);");
 	ifV cln ("V = 0;");

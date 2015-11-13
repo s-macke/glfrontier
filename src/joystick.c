@@ -1,4 +1,4 @@
-#include <ini.h>
+/*include <ini.h>*/
 #include <SDL.h>
 
 #include "main.h"
@@ -67,6 +67,9 @@ static const char * const mode_names[] = {
 	"Adventure", "Battle", "Mouse",
 };
 
+
+struct INI {int x;};
+
 static struct {
 	const char *action;
 	unsigned char code;
@@ -123,6 +126,7 @@ const char * mode_name(void)
 	return mode_names[current_mode];
 }
 
+
 static void read_key_config(struct INI *ini, unsigned char mode)
 {
 	for (;;) {
@@ -130,7 +134,9 @@ static void read_key_config(struct INI *ini, unsigned char mode)
 		size_t lkey, lval;
 		unsigned int i;
 		unsigned char code = 0, button;
-		int ret = ini_read_pair(ini, &key, &lkey, &val, &lval);
+		//int ret = ini_read_pair(ini, &key, &lkey, &val, &lval);
+		int ret = -1;
+		break;
 		if (ret <= 0)
 			break;
 
@@ -152,16 +158,22 @@ static void read_key_config(struct INI *ini, unsigned char mode)
 
 void joystick_read_config(const char *path)
 {
-	struct INI *ini = ini_open(path);
+	return;
+	//struct INI *ini = ini_open(path);
+	struct INI *ini;
+	
 	if (!ini)
 		return;
 
 	for (;;) {
 		const char *name;
 		size_t len;
+/*
 		if (ini_next_section(ini, &name, &len) <= 0)
 			break;
-
+*/
+		break;
+/*
 		if (!strncmp(name, "Aventure Mode", len))
 			read_key_config(ini, MODE_AVENTURE);
 		else if (!strncmp(name, "Battle Mode", len))
@@ -170,9 +182,10 @@ void joystick_read_config(const char *path)
 			read_key_config(ini, MODE_MOUSE);
 		else
 			fprintf(stderr, "WARNING: Skip unsupported section in config file");
+*/
 	}
 
-	ini_close(ini);
+	//ini_close(ini);
 }
 
 static void inject_mouse_event(unsigned int x, unsigned int y, int pressed)

@@ -151,7 +151,6 @@ void load_binfile (const char *bin_filename)
 	
 	buf_pos = LOAD_BASE + 2;
 	code_end = LOAD_BASE + 0x1c + rdlong (buf_pos);
-	
 	i=0;
 	reloc = get_fixup (0, code_end);
 	while (reloc) {

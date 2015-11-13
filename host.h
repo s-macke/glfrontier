@@ -20,11 +20,11 @@
 union Reg {
 	u16	word[2];
 	u32	_u32;
-	u16	_u16;
-	u8	_u8;
+	u16	_u16[2];
+	u8	_u8[4];
 	s32	_s32;
-	s16	_s16;
-	s8	_s8;
+	s16	_s16[2];
+	s8	_s8[4];
 };
 
 /* m68000 state ----------------------------------------------------- */
@@ -78,7 +78,8 @@ static inline u32 do_get_mem_long(u32 *a)
     u8 *b = (u8 *)a;
     return (*b << 24) | (*(b+1) << 16) | (*(b+2) << 8) | (*(b+3));
 #else
-    return *a;
+    u8 *b = (u8 *)a;
+    return (*b << 24) | (*(b+1) << 16) | (*(b+2) << 8) | (*(b+3));
 #endif
 }
 
@@ -92,7 +93,8 @@ static inline u16 do_get_mem_word(u16 *a)
     u8 *b = (u8 *)a;
     return (*b << 8) | (*(b+1));
 #else
-    return *a;
+    u8 *b = (u8 *)a;
+    return (*b << 8) | (*(b+1));
 #endif
 }
 
@@ -114,7 +116,12 @@ static inline void do_put_mem_long(u32 *a, u32 v)
     *(b+2) = v >> 8;
     *(b+3) = v;
 #else
-    *a = v;
+    u8 *b = (u8 *)a;
+    
+    *b = v >> 24;
+    *(b+1) = v >> 16;    
+    *(b+2) = v >> 8;
+    *(b+3) = v;
 #endif
 }
 
@@ -129,7 +136,10 @@ static inline void do_put_mem_word(u16 *a, u16 v)
     *b = v >> 8;
     *(b+1) = v;
 #else
-    *a = v;
+    u8 *b = (u8 *)a;
+    
+    *b = v >> 8;
+    *(b+1) = v;
 #endif
 }
 

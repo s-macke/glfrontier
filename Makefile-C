@@ -1,6 +1,10 @@
 THIS=Makefile-C
 VERSION=20060623
 
+CROSS_COMPILE := or1k-linux-musl-
+COMPILER := gcc
+
+
 SRCOBJS := audio.o hostcall.o keymap.o main.o shortcut.o input.o joystick.o
 
 COMPILER ?= gcc
@@ -10,11 +14,13 @@ SDL_CONFIG := $(shell $(CC) --print-sysroot)/usr/bin/sdl-config
 SDL_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
 SDL_LIBS := $(shell $(SDL_CONFIG) --libs)
 
-CFLAGS := -O3 -fomit-frame-pointer -Wall -Wno-unused $(SDL_CFLAGS) -DOGG_MUSIC
+#CFLAGS := -O3 -fomit-frame-pointer -Wall -Wno-unused $(SDL_CFLAGS) -DOGG_MUSIC
+CFLAGS := -O2 -fomit-frame-pointer -Wall -Wno-unused $(SDL_CFLAGS)
 
-LIBS := -lvorbisfile -lvorbis -logg -lini $(SDL_LIBS) -lSDL_image
+#LIBS := -lvorbisfile -lvorbis -logg -lini $(SDL_LIBS) -lSDL_image
+LIBS := $(SDL_LIBS) -lSDL_image
 
-WITH_GL=y
+#WITH_GL=y
 ifeq ($(WITH_GL),y)
 	SRCOBJS += gl.o
 	LIBS += -lGL -lGLU

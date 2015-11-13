@@ -1,7 +1,7 @@
 #ifndef _M68K_H
 #define _M68K_H
 
-//#define M68K_DEBUG
+//define M68K_DEBUG
 
 /* use this type to mean m68k pointer, which becomes a host machine
  * pointer when STRam (mem base) is added to it). */
